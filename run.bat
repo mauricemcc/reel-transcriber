@@ -11,40 +11,37 @@ set DOCS_DIR=%USERPROFILE%\Documents\Transcribed Reels
 set COOKIES_FILE=%USERPROFILE%\Downloads\cookies.txt
 set FF_DIR=%BASE_DIR%\ffmpeg
 
-:: 1. Check for Python
+:: 1. Check Python exists
 if not exist "%PY_DIR%\python.exe" (
     echo [ERROR] Python not found in %PY_DIR%.
+    echo Please run install.bat first.
     pause
     exit /b
 )
 
-:: 2. Check pip
+:: 2. Check pip exists
 "%PY_DIR%\python.exe" -m pip --version >nul 2>&1
 if errorlevel 1 (
-    echo ╠ Installing pip...
-    "%PY_DIR%\python.exe" -m ensurepip
+    echo ► Installing pip...
+    "%PY_DIR%\python.exe" "%BASE_DIR%\get-pip.py"
     "%PY_DIR%\python.exe" -m pip install --upgrade pip setuptools wheel
 )
 
-:: 3. Check dependencies
+:: 3. Check & install missing dependencies
 echo Checking dependencies...
-"%PY_DIR%\python.exe" -m pip show yt-dlp >nul 2>&1 || set MISSING_DEPS=1
-"%PY_DIR%\python.exe" -m pip show openai-whisper >nul 2>&1 || set MISSING_DEPS=1
-"%PY_DIR%\python.exe" -m pip show opencv-python >nul 2>&1 || set MISSING_DEPS=1
-"%PY_DIR%\python.exe" -m pip show pytesseract >nul 2>&1 || set MISSING_DEPS=1
-"%PY_DIR%\python.exe" -m pip show pillow >nul 2>&1 || set MISSING_DEPS=1
-"%PY_DIR%\python.exe" -m pip show torch >nul 2>&1 || set MISSING_DEPS=1
-"%PY_DIR%\python.exe" -m pip show tiktoken >nul 2>&1 || set MISSING_DEPS=1
-
+set MISSING_DEPS=
+for %%P in (yt-dlp openai-whisper opencv-python pytesseract pillow torch tiktoken) do (
+    "%PY_DIR%\python.exe" -m pip show %%P >nul 2>&1 || set MISSING_DEPS=1
+)
 if defined MISSING_DEPS (
-    echo ╠ Installing missing dependencies...
+    echo ► Installing missing dependencies...
     "%PY_DIR%\python.exe" -m pip install yt-dlp openai-whisper opencv-python pytesseract pillow torch tiktoken
 )
 
 :: 4. Check FFmpeg
 if not exist "%FF_DIR%\bin\ffmpeg.exe" (
     echo [ERROR] FFmpeg not found in %FF_DIR%\bin.
-    echo Please run the installer again.
+    echo Please run install.bat again.
     pause
     exit /b
 )
@@ -64,9 +61,9 @@ if not exist "%COOKIES_FILE%" (
     exit /b
 )
 
-:: 6. Run the script
-echo ╠ Running Reel Transcriber...
+:: 6. Run script
+echo ► Running Reel Transcriber...
 "%PY_DIR%\python.exe" "%SCRIPT_PATH%"
 echo.
-echo ╚ Finished! Check "%DOCS_DIR%" for your transcripts.
+echo ✔ Finished! Check "%DOCS_DIR%" for your transcripts.
 pause
