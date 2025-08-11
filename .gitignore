@@ -1,0 +1,23 @@
+# Ignore portable Python runtime
+python/
+
+# Ignore ffmpeg binaries
+ffmpeg/
+
+# Ignore any generated reel downloads or transcripts
+Transcribed Reels/
+downloads/
+
+# Ignore cache, temp, and log files
+__pycache__/
+*.log
+*.tmp
+*.temp
+
+# Ignore cookies file
+cookies.txt
+
+# Ignore OS metadata files
+.DS_Store
+Thumbs.db
+desktop.ini

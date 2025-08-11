@@ -1,0 +1,5 @@
+yt-dlp
+opencv-python
+pytesseract
+pillow
+git+https://github.com/openai/whisper.git
