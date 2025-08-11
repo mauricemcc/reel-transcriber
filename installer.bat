@@ -1,74 +1,78 @@
 @echo off
+setlocal EnableDelayedExpansion
 title Reel Transcriber Installer
-color 0A
-setlocal
 
 set BASE_DIR=C:\reel-transcriber
 set PY_DIR=%BASE_DIR%\python
-set FF_DIR=%BASE_DIR%\ffmpeg
-set ASSETS_DIR=%BASE_DIR%\assets
-set SCRIPT_PATH=%BASE_DIR%\scripts\reel_transcriber_vad.py
-set ICON_PATH=%ASSETS_DIR%\icon.ico
-set SHORTCUT_NAME=Reel Transcriber.lnk
-set DESKTOP_PATH=%USERPROFILE%\Desktop
+set PY_URL=https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip
+set PY_ZIP=%BASE_DIR%\python.zip
+set GETPIP_URL=https://bootstrap.pypa.io/get-pip.py
+set FFMPEG_URL=https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+set FFMPEG_ZIP=%BASE_DIR%\ffmpeg.zip
+set DOCS_DIR=%USERPROFILE%\Documents\Transcribed Reels
 
 echo === Reel Transcriber Installer ===
 
-:: Create base directories
+:: Create base folder
 if not exist "%BASE_DIR%" mkdir "%BASE_DIR%"
-if not exist "%ASSETS_DIR%" mkdir "%ASSETS_DIR%"
-if not exist "%BASE_DIR%\scripts" mkdir "%BASE_DIR%\scripts"
+if not exist "%DOCS_DIR%" mkdir "%DOCS_DIR%"
 
-:: STEP 1 - Download Portable Python
-if not exist "%PY_DIR%" (
-    echo ▓ Downloading Portable Python 3.11.9...
-    powershell -Command "Invoke-WebRequest -Uri https://github.com/winpython/winpython/releases/download/20240602/Winpython64-3.11.9.0dot.exe -OutFile %BASE_DIR%\python_installer.exe"
-    echo ▓ Extracting Python...
-    "%BASE_DIR%\python_installer.exe" -y -o"%PY_DIR%"
-    del "%BASE_DIR%\python_installer.exe"
+:: Download Python ZIP
+echo ► Downloading Portable Python 3.11.9...
+powershell -Command "Invoke-WebRequest -Uri '%PY_URL%' -OutFile '%PY_ZIP%'"
+if errorlevel 1 (
+    echo [ERROR] Failed to download Python.
+    pause
+    exit /b
 )
 
-:: STEP 2 - Install pip via get-pip.py
-if not exist "%PY_DIR%\Scripts\pip.exe" (
-    echo ▓ Downloading get-pip.py...
-    powershell -Command "Invoke-WebRequest -Uri https://bootstrap.pypa.io/get-pip.py -OutFile %BASE_DIR%\get-pip.py"
-    echo ▓ Installing pip...
-    "%PY_DIR%\python.exe" "%BASE_DIR%\get-pip.py"
-    del "%BASE_DIR%\get-pip.py"
-)
+:: Extract Python ZIP
+echo ► Extracting Python...
+powershell -Command "Expand-Archive -Path '%PY_ZIP%' -DestinationPath '%PY_DIR%' -Force"
+del "%PY_ZIP%"
 
-:: STEP 3 - Install dependencies
-echo ▓ Installing Python dependencies...
+:: Download get-pip.py
+echo ► Downloading get-pip.py...
+powershell -Command "Invoke-WebRequest -Uri '%GETPIP_URL%' -OutFile '%BASE_DIR%\get-pip.py'"
+
+:: Install pip
+echo ► Installing pip...
+"%PY_DIR%\python.exe" "%BASE_DIR%\get-pip.py"
+
+:: Install dependencies
+echo ► Installing Python dependencies...
 "%PY_DIR%\python.exe" -m pip install --upgrade pip
 "%PY_DIR%\python.exe" -m pip install yt-dlp openai-whisper opencv-python pytesseract pillow torch tiktoken
 
-:: STEP 4 - Download FFmpeg
-if not exist "%FF_DIR%" (
-    echo ▓ Downloading FFmpeg...
-    powershell -Command "Invoke-WebRequest -Uri https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip -OutFile %BASE_DIR%\ffmpeg.zip"
-    echo ▓ Extracting FFmpeg...
-    powershell -Command "Expand-Archive -Path '%BASE_DIR%\ffmpeg.zip' -DestinationPath '%BASE_DIR%'"
-    for /d %%i in ("%BASE_DIR%\ffmpeg-*") do move "%%i\bin" "%FF_DIR%"
-    rmdir /s /q "%BASE_DIR%\ffmpeg-*"
-    del "%BASE_DIR%\ffmpeg.zip"
-)
+:: Download FFmpeg
+echo ► Downloading FFmpeg...
+powershell -Command "Invoke-WebRequest -Uri '%FFMPEG_URL%' -OutFile '%FFMPEG_ZIP%'"
+echo ► Extracting FFmpeg...
+powershell -Command "Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%BASE_DIR%' -Force"
+del "%FFMPEG_ZIP%"
+move "%BASE_DIR%\ffmpeg-*-essentials_build" "%BASE_DIR%\ffmpeg" >nul
 
-:: STEP 5 - Chrome extension info (bright cyan)
-color 0B
+:: Show Chrome extension step in cyan
 echo.
 echo ============================================================
-echo Please install the "Get cookies.txt" Chrome extension:
-echo https://chrome.google.com/webstore/detail/get-cookiestxt/iaiioopjkcekapmldfgbebdclcnpgnlo
+echo [96mPlease install the "Get cookies.txt" Chrome extension:[0m
+echo [96mhttps://chrome.google.com/webstore/detail/get-cookiestxt/iaiioopjkcekapmldfgbebdclcnpgnlo[0m
 echo.
 echo 1. Open Chrome and log into Instagram.
 echo 2. Use the extension to export cookies.txt to your Downloads folder.
 echo ============================================================
-color 0A
 echo.
 
-:: STEP 6 - Create desktop shortcut
-echo ▓ Creating desktop shortcut...
-powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%DESKTOP_PATH%\%SHORTCUT_NAME%');$s.TargetPath='%BASE_DIR%\run.bat';$s.IconLocation='%ICON_PATH%';$s.WorkingDirectory='%BASE_DIR%';$s.Save()"
+:: Create desktop shortcut
+echo ► Creating desktop shortcut...
+set SHORTCUT_PATH=%USERPROFILE%\Desktop\Reel Transcriber.lnk
+powershell -Command ^
+  "$s=(New-Object -COM WScript.Shell).CreateShortcut('%SHORTCUT_PATH%');" ^
+  "$s.TargetPath='%BASE_DIR%\run.bat';" ^
+  "$s.IconLocation='%BASE_DIR%\assets\icon.ico';" ^
+  "$s.WorkingDirectory='%BASE_DIR%';" ^
+  "$s.Save()"
 
-echo ▓ Installation complete! You can now run Reel Transcriber from your desktop.
+echo.
+echo ✔ Installation complete! You can now run Reel Transcriber from your desktop.
 pause
